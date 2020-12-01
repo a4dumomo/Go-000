@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Week02/dao"
 	"Week02/service"
 	"fmt"
 	"github.com/pkg/errors"
@@ -17,6 +18,11 @@ func main() {
 	} else {
 		fmt.Printf("user info:%+v\n", user)
 	}
+	//是否 ErrNotData
+	if errors.Is(err, dao.ErrNotData) {
+		fmt.Println("err is not data exist")
+	}
+
 	fmt.Println("-----------------------")
 	//success
 	id = 100
