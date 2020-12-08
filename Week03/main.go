@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -13,51 +14,78 @@ import (
 )
 
 func main() {
-	quit := make(chan os.Signal, 1) //service stop signal
-	done := make(chan struct{}, 1)  //service stop finsh
-	eg, _ := errgroup.WithContext(context.Background())
+
+	eg, ctx := errgroup.WithContext(context.Background())
 
 	eg.Go(func() error {
-		return server(quit, done)
+		return Signal(ctx)
 	})
 
 	eg.Go(func() error {
-		signal.Notify(quit, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
-		<-done
-		return nil
+		return Server(ctx, ":8080")
 	})
 
-	err := eg.Wait()
-	if err != nil {
-		log.Fatalf("Service monitoring failed:%v", err)
+	eg.Go(func() error {
+		return Server(ctx, ":8081")
+	})
+
+	if err := eg.Wait(); err != nil {
+		log.Println("err:", err)
 	}
-	log.Println("The service has been exited")
+	log.Println("service closed success")
+}
+
+//router
+func Mux() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Write([]byte("Hello World:" + request.RemoteAddr))
+	})
+	return mux
+}
+
+func Signal(ctx context.Context) error {
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	select {
+	case <-quit:
+		return errors.New("receive signal stop")
+	case <-ctx.Done():
+		log.Println("signal listen sotop")
+		return nil
+	}
 }
 
 //server
-func server(quit <-chan os.Signal, done chan<- struct{}) error {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte("Helllo World!"))
-	})
+func Server(ctx context.Context, addr string) error {
 	server := http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+		Addr:    addr,
+		Handler: Mux(),
 	}
+	stop := make(chan error, 1)
+
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("Shutdown Error:%v\n", err)
+				log.Println("shutdown err")
 			}
 		}()
-		<-quit
-		//5s to finish all service
-		ctx, cancal := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancal()
-		if err := server.Shutdown(ctx); err != nil {
-			log.Println("Service shutdown failed,err:", err)
+		if err := server.ListenAndServe(); err != nil {
+			log.Println("start service fail:", err)
+			stop <- err
 		}
-		done <- struct{}{}
 	}()
-	return server.ListenAndServe()
+
+	select {
+	case <-ctx.Done():
+		ctx2, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx2); err != nil {
+			return err
+		}
+	case err := <-stop:
+		return err
+	}
+	return nil
 }
