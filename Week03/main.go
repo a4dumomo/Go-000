@@ -22,10 +22,6 @@ func main() {
 	})
 
 	eg.Go(func() error {
-		return Server(ctx, ":8080")
-	})
-
-	eg.Go(func() error {
 		return Server(ctx, ":8081")
 	})
 
@@ -45,7 +41,6 @@ func Mux() *http.ServeMux {
 }
 
 func Signal(ctx context.Context) error {
-
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	select {
