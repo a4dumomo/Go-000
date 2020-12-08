@@ -26,7 +26,7 @@ func main() {
 	})
 
 	if err := eg.Wait(); err != nil {
-		log.Println("err:", err)
+		log.Printf("err:%v\n", err)
 	}
 	log.Println("service closed success")
 }
@@ -63,11 +63,11 @@ func Server(ctx context.Context, addr string) error {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Println("shutdown err")
+				log.Printf("shutdown err:%v\n", err)
 			}
 		}()
 		if err := server.ListenAndServe(); err != nil {
-			log.Println("start service fail:", err)
+			log.Printf("start service fail:%v\n", err)
 			stop <- err
 		}
 	}()
