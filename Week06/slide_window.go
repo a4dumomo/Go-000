@@ -72,7 +72,7 @@ func NewSlideWindow(opts ...Option) *slideWindow {
 		go func() {
 			tricker := time.NewTicker(sw.deleteBucketTime)
 			for range tricker.C {
-				sw.removeOldBuckets()
+				sw.removeAsyOldBuckets()
 			}
 		}()
 	}
@@ -91,12 +91,21 @@ func (s *slideWindow) getCurrentBucket() *numberBucket{
 	return bucket
 }
 
+//Asy remove old bucket
+func (s *slideWindow) removeAsyOldBuckets() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := time.Now().Unix() - int64(s.bucket)
+	for key := range s.win {
+		if key <= now {
+			delete(s.win, key)
+		}
+	}
+}
+
 //remove old bucket
 func (s *slideWindow) removeOldBuckets() {
 	now := time.Now().Unix() - int64(s.bucket)
-	//Keep one more to prevent loss during calculation
-	now--
-
 	for key := range s.win {
 		if key <= now {
 			delete(s.win, key)
@@ -120,21 +129,19 @@ func (s *slideWindow) Increment(i float64) {
 }
 
 // get recent sum
-func (s *slideWindow) Sum() (float64,int) {
+func (s *slideWindow) Sum() float64{
 	var sum float64
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	now := time.Now()
 	//Calculate the number
 	//protect caculte average no equal bucket number
-	n := 0
 	for timestamp, bucket := range s.win {
 		if timestamp >= now.Unix()- int64(s.bucket) {
 			sum += bucket.value
-			n++
 		}
 	}
-	return sum,n
+	return sum
 }
 
 //Get the most recent maximum
@@ -155,12 +162,7 @@ func (s *slideWindow) Max() float64 {
 
 //Get recent average
 func (s *slideWindow) Average() float64 {
-	sum,n := s.Sum()
-	if n == 0 {
-		return 0
-	}
-	return sum / float64(n)
-	//return  / float64(s.bucket)
+	return  s.Sum()/ float64(s.bucket)
 }
 
 //get bucket length

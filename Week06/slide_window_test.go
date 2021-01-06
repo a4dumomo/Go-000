@@ -26,8 +26,7 @@ func TestNewSlideWindow(t *testing.T) {
 		for  {
 			//t.Log("Print:")
 			time.Sleep(time.Second)
-			sum,_ := s.Sum()
-			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),sum)
+			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),s.Sum())
 		}
 	}()
 	select {}
@@ -53,8 +52,7 @@ func TestFuncToDeleteBucket(t *testing.T){
 		for  {
 			//t.Log("Print:")
 			time.Sleep(time.Second)
-			sum,_ := s.Sum()
-			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),sum)
+			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),s.Sum())
 		}
 	}()
 	select {}
@@ -81,8 +79,7 @@ func TestCronToDelete(t *testing.T){
 		for  {
 			//t.Log("Print:")
 			time.Sleep(time.Second)
-			sum,_ := s.Sum()
-			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),sum)
+			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),s.Sum())
 		}
 	}()
 	select {}
@@ -107,8 +104,7 @@ func TestBucketNum(t *testing.T){
 		for  {
 			//t.Log("Print:")
 			time.Sleep(time.Second)
-			sum,_ := s.Sum()
-			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),sum)
+			t.Logf("len:%d,max:%f,average:%f,sum:%f\n",s.BucketLen(),s.Max(),s.Average(),s.Sum())
 		}
 	}()
 	select {}
